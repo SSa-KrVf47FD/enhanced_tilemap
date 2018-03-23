@@ -65,7 +65,7 @@ define(function (require) {
     },
     getAggConfig: function (aggs, aggName) {
       let aggConfig = null;
-      index = _.findIndex(aggs, function (agg) {
+      let index = _.findIndex(aggs, function (agg) {
         return agg.schema.name === aggName;
       });
       if (index !== -1) {

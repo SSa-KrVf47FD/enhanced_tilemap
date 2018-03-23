@@ -3,14 +3,15 @@ import _ from 'lodash';
 import $ from 'jquery';
 import { Binder } from 'ui/binder';
 import MapProvider from 'plugins/enhanced_tilemap/vislib/_map';
-import { VislibVisTypeBuildChartDataProvider } from 'ui/vislib_vis_type/build_chart_data';
+// import { VislibVisTypeBuildChartDataProvider } from 'ui/vislib_vis_type/build_chart_data';
 import { backwardsCompatible } from './backwardsCompatible';
 import { FilterBarQueryFilterProvider } from 'ui/filter_bar/query_filter';
-import { ResizeCheckerProvider } from 'ui/vislib/lib/resize_checker';
+import { ResizeCheckerProvider } from 'ui/resize_checker';
 import { uiModules } from 'ui/modules';
 import { TileMapTooltipFormatterProvider } from 'ui/agg_response/geo_json/_tooltip_formatter';
+// import 'plugins/enhanced_tilemap/utils';
 
-define(function (require) {
+// define(function (require) {
   var module = uiModules.get('kibana/enhanced_tilemap', [
     'kibana',
     'etm-ui.bootstrap.accordion',
@@ -21,13 +22,13 @@ define(function (require) {
   module.controller('KbnEnhancedTilemapVisController', function (
     $scope, $rootScope, $element, $timeout,
     Private, courier, config, getAppState, indexPatterns) {
-    let buildChartData = Private(VislibVisTypeBuildChartDataProvider);
+    // const buildChartData = Private(VislibVisTypeBuildChartDataProvider);
     const queryFilter = Private(FilterBarQueryFilterProvider);
     const callbacks = Private(require('plugins/enhanced_tilemap/callbacks'));
     const geoFilter = Private(require('plugins/enhanced_tilemap/vislib/geoFilter'));
     const POIsProvider = Private(require('plugins/enhanced_tilemap/POIs'));
     const utils = require('plugins/enhanced_tilemap/utils');
-    let TileMapMap = Private(MapProvider);
+    const TileMapMap = Private(MapProvider);
     const ResizeChecker = Private(ResizeCheckerProvider);
     const SearchTooltip = Private(require('plugins/enhanced_tilemap/tooltip/searchTooltip'));
     const VisTooltip = Private(require('plugins/enhanced_tilemap/tooltip/visTooltip'));
@@ -39,7 +40,7 @@ define(function (require) {
 
     backwardsCompatible.updateParams($scope.vis.params);
     appendMap();
-    modifyToDsl();
+    // modifyToDsl();
     setTooltipFormatter($scope.vis.params.tooltip);
 
     const shapeFields = $scope.vis.indexPattern.fields.filter(function (field) {
@@ -58,63 +59,63 @@ define(function (require) {
       resizeArea();
     });
 
-    const respProcessor = {
-      buildChartData: buildChartData,
-      process: function(resp) {
-        const aggs = resp.aggregations;
-        _.keys(aggs).forEach(function(key) {
-          if(_.has(aggs[key], "filtered_geohash")) {
-            aggs[key].buckets = aggs[key].filtered_geohash.buckets;
-            delete aggs[key].filtered_geohash;
-          }
-        });
+    // const respProcessor = {
+    //   buildChartData: buildChartData,
+    //   process: function(resp) {
+    //     const aggs = resp.aggregations;
+    //     _.keys(aggs).forEach(function(key) {
+    //       if(_.has(aggs[key], "filtered_geohash")) {
+    //         aggs[key].buckets = aggs[key].filtered_geohash.buckets;
+    //         delete aggs[key].filtered_geohash;
+    //       }
+    //     });
 
-        const chartData = this.buildChartData(resp);
-        const geoMinMax = utils.getGeoExtents(chartData);
-        chartData.geoJson.properties.allmin = geoMinMax.min;
-        chartData.geoJson.properties.allmax = geoMinMax.max;
-        return chartData;
-      },
-      vis: $scope.vis
-    }
+    //     const chartData = this.buildChartData(resp);
+    //     const geoMinMax = utils.getGeoExtents(chartData);
+    //     chartData.geoJson.properties.allmin = geoMinMax.min;
+    //     chartData.geoJson.properties.allmax = geoMinMax.max;
+    //     return chartData;
+    //   },
+    //   vis: $scope.vis
+    // }
 
-    function modifyToDsl() {
-      $scope.vis.aggs.origToDsl = $scope.vis.aggs.toDsl;
-      $scope.vis.aggs.toDsl = function() {
-        resizeArea();
-        const dsl = $scope.vis.aggs.origToDsl();
+    // function modifyToDsl() {
+    //   $scope.vis.aggs.origToDsl = $scope.vis.aggs.toDsl;
+    //   $scope.vis.aggs.toDsl = function() {
+    //     resizeArea();
+    //     const dsl = $scope.vis.aggs.origToDsl();
 
-        //append map collar filter to geohash_grid aggregation
-        _.keys(dsl).forEach(function(key) {
-          if(_.has(dsl[key], "geohash_grid")) {
-            const origAgg = dsl[key];
-            dsl[key] = {
-              filter: aggFilter(origAgg.geohash_grid.field),
-              aggs: {
-                filtered_geohash: origAgg
-              }
-            }
-          }
-        });
-        return dsl;
-      }
-    }
+    //     //append map collar filter to geohash_grid aggregation
+    //     _.keys(dsl).forEach(function(key) {
+    //       if(_.has(dsl[key], "geohash_grid")) {
+    //         const origAgg = dsl[key];
+    //         dsl[key] = {
+    //           filter: aggFilter(origAgg.geohash_grid.field),
+    //           aggs: {
+    //             filtered_geohash: origAgg
+    //           }
+    //         }
+    //       }
+    //     });
+    //     return dsl;
+    //   }
+    // }
 
-    function aggFilter(field) {
-      collar = utils.scaleBounds(
-        map.mapBounds(),
-        $scope.vis.params.collarScale);
-      var filter = {geo_bounding_box: {}};
-      filter.geo_bounding_box[field] = collar;
-      return filter;
-    }
+    // function aggFilter(field) {
+    //   collar = utils.scaleBounds(
+    //     map.mapBounds(),
+    //     $scope.vis.params.collarScale);
+    //   var filter = {geo_bounding_box: {}};
+    //   filter.geo_bounding_box[field] = collar;
+    //   return filter;
+    // }
 
-    $scope.$watch('vis.aggs', function (resp) {
-      //'apply changes' creates new vis.aggs object - ensure toDsl is overwritten again
-      if(!_.has($scope.vis.aggs, "origToDsl")) {
-        modifyToDsl();
-      }
-    });
+    // $scope.$watch('vis.aggs', function (resp) {
+    //   //'apply changes' creates new vis.aggs object - ensure toDsl is overwritten again
+    //   if(!_.has($scope.vis.aggs, "origToDsl")) {
+    //     modifyToDsl();
+    //   }
+    // });
 
     function initPOILayer(layerParams) {
       const poi = new POIsProvider(layerParams);
@@ -146,7 +147,7 @@ define(function (require) {
 
     $scope.$watch('esResponse', function (resp) {
       if(_.has(resp, 'aggregations')) {
-        chartData = respProcessor.process(resp);
+        // chartData = respProcessor.process(resp);
         draw();
 
         _.filter($scope.vis.params.overlays.savedSearches, function(layerParams) {
@@ -332,12 +333,21 @@ define(function (require) {
         callbacks: callbacks,
         mapType: params.mapType,
         attr: params,
-        editable: $scope.vis.getEditableVis() ? true : false
+        editable: true
       });
     }
 
     function resizeArea() {
       if (map) map.updateSize();
     }
+
+
+
   });
-});
+
+
+
+
+
+
+

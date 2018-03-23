@@ -5,39 +5,47 @@ import 'plugins/enhanced_tilemap/bower_components/angularjs-dropdown-multiselect
 import _ from 'lodash';
 import { supports } from 'ui/utils/supports';
 import { AggResponseGeoJsonProvider } from 'ui/agg_response/geo_json/geo_json';
-import { VisVisTypeProvider } from 'ui/vis/vis_type';
-import { TemplateVisTypeProvider } from 'ui/template_vis_type/template_vis_type';
-import { VisTypesRegistryProvider } from 'ui/registry/vis_types';
-import { VisSchemasProvider } from 'ui/vis/schemas';
+  import { CATEGORY } from 'ui/vis/vis_category';
+  import { VisFactoryProvider } from 'ui/vis/vis_factory';
+  import { VisTypesRegistryProvider } from 'ui/registry/vis_types';
+  import { VisSchemasProvider } from 'ui/vis/editors/default/schemas';
 
-define(function (require) {
+import 'plugins/enhanced_tilemap/vis.less';
+import 'plugins/enhanced_tilemap/lib/jquery.minicolors/minicolors';
+import 'plugins/enhanced_tilemap/directives/bands';
+import 'plugins/enhanced_tilemap/directives/savedSearches';
+import 'plugins/enhanced_tilemap/directives/tooltipFormatter';
+import 'plugins/enhanced_tilemap/directives/wmsOverlays';
+import 'plugins/enhanced_tilemap/tooltip/popupVisualize';
+import 'plugins/enhanced_tilemap/tooltip/popupVisualize.less';
+import 'plugins/enhanced_tilemap/visController';
+
+  import optionsTemplate from 'plugins/enhanced_tilemap/options.html';
+  import visData from 'plugins/enhanced_tilemap/vis.html';
+
+// define(function (require) {
   VisTypesRegistryProvider.register(EnhancedTileMapVisProvider);
-  require('plugins/enhanced_tilemap/vis.less');
-  require('plugins/enhanced_tilemap/lib/jquery.minicolors/minicolors');
-  require('plugins/enhanced_tilemap/directives/bands');
-  require('plugins/enhanced_tilemap/directives/savedSearches');
-  require('plugins/enhanced_tilemap/directives/tooltipFormatter');
-  require('plugins/enhanced_tilemap/directives/wmsOverlays');
-  require('plugins/enhanced_tilemap/tooltip/popupVisualize');
-  require('plugins/enhanced_tilemap/tooltip/popupVisualize.less');
-  require('plugins/enhanced_tilemap/visController');
+  
+  
 
   function EnhancedTileMapVisProvider(Private, getAppState, courier, config) {
-    const VisType = Private(VisVisTypeProvider);
-    const TemplateVisType = Private(TemplateVisTypeProvider);
+    // const VisType = Private(VisVisTypeProvider);
+    // const TemplateVisType = Private(TemplateVisTypeProvider);
     const Schemas = Private(VisSchemasProvider);
     const geoJsonConverter = Private(AggResponseGeoJsonProvider);
+      const VisFactory = Private(VisFactoryProvider);
 
-    return new TemplateVisType({
+    return VisFactory.createAngularVisualization({
+
       name: 'enhanced_tilemap',
       title: 'Enhanced Coordinate Map',
       icon: 'fa-map-marker',
       description: 'Coordinate map plugin that provides better performance, complete geospatial query support, and more features than the built in Coordinate map.',
-      category: VisType.CATEGORY.MAP,
-      template: require('plugins/enhanced_tilemap/vis.html'),
-      params: {
-        defaults: {
-          mapType: 'Scaled Circle Markers',
+      category: CATEGORY.MAP,
+      // template: require('plugins/enhanced_tilemap/vis.html'),
+      visConfig: {
+      defaults: {
+        mapType: 'Scaled Circle Markers',
           collarScale: 1.5,
           scaleType: 'Dynamic - Linear',
           scaleBands: [{
@@ -61,24 +69,25 @@ define(function (require) {
             wmsOverlays: []
           },
           wms: config.get('visualization:tileMap:WMSdefaults')
-        },
-        mapTypes: ['Scaled Circle Markers', 'Shaded Circle Markers', 'Shaded Geohash Grid', 'Heatmap'],
+      },
+      template: visData
+    },
+
+    editorConfig: {
+      optionsTemplate: optionsTemplate,
+
+    mapTypes: ['Scaled Circle Markers', 'Shaded Circle Markers', 'Shaded Geohash Grid', 'Heatmap'],
         scaleTypes: ['Dynamic - Linear', 'Dynamic - Uneven', 'Static'],
         canDesaturate: !!supports.cssFilters,
-        editor: require('plugins/enhanced_tilemap/options.html')
-      },
-      hierarchicalData: function (vis) {
-        return false;
-      },
-      responseConverter: geoJsonConverter,
-      schemas: new Schemas([
+        responseConverter: geoJsonConverter,
+     schemas: new Schemas([
         {
           group: 'metrics',
           name: 'metric',
           title: 'Value',
           min: 1,
           max: 1,
-          aggFilter: ['count', 'avg', 'sum', 'min', 'max', 'cardinality'],
+          // aggFilter: ['count', 'avg', 'sum', 'min', 'max', 'cardinality'],
           defaults: [
             { schema: 'metric', type: 'count' }
           ]
@@ -87,13 +96,20 @@ define(function (require) {
           group: 'buckets',
           name: 'segment',
           title: 'Geo Coordinates',
-          aggFilter: 'geohash_grid',
+          // aggFilter: 'geohash_grid',
           min: 1,
           max: 1
         }
       ])
+    },
+
+      hierarchicalData: function (vis) {
+        return false;
+      }
+      
+    
     });
   }
 
-  return EnhancedTileMapVisProvider;
-});
+  export default EnhancedTileMapVisProvider;
+// });
