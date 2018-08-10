@@ -2,15 +2,15 @@ var module = require('ui/modules').get('kibana/enhanced_tilemap');
 module.directive('bands', function () {
   function link (scope, element, attrs) {
     //colorbrewer YlOrRd-9
-    const defaultColors = ["#ffffcc","#ffeda0","#fed976","#feb24c","#fd8d3c","#fc4e2a","#e31a1c","#bd0026","#800026"];
+    const defaultColors = ["#daf7a6","#ffc300","#ff5733","#c70039","#900c3f","#581845"];
     scope.addBand = function() {
       let low = null;
       let high = null;
       if(scope.bands.length > 0) {
         const lastBand = scope.bands.slice(-1)[0];
         if(!isNaN(lastBand.high) && !isNaN(lastBand.low)) {
-          low = lastBand.high;
-          high = low + (lastBand.high - lastBand.low)
+          low = parseInt(lastBand.high, 10);
+          high = low + (parseInt(lastBand.high, 10) - parseInt(lastBand.low, 10));
         }
       }
       let colorIndex = scope.bands.length;
@@ -18,7 +18,8 @@ module.directive('bands', function () {
       scope.bands.push({
         low: low,
         high: high,
-        color: defaultColors[colorIndex]
+        color: defaultColors[colorIndex],
+        customLabel: null
       });
     }
 
