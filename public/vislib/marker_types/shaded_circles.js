@@ -18,8 +18,8 @@ define(function (require) {
       ShadedCircleMarker.Super.apply(this, arguments);
 
       // super min and max from all chart data
-      let min = this.geoJson.properties.allmin;
-      let max = this.geoJson.properties.allmax;
+      let min = this.geoJson.properties.min;
+      let max = this.geoJson.properties.max;
 
       // multiplier to reduce size of all circles
       let scaleFactor = 0.8;
