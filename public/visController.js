@@ -146,8 +146,8 @@ import { TileMapTooltipFormatterProvider } from 'ui/agg_response/geo_json/_toolt
     });
 
     $scope.$watch('esResponse', function (resp) {
-      if(_.has(resp, 'aggregations')) {
-        // chartData = respProcessor.process(resp);
+      if(_.has(resp, 'geoJson')) {
+        chartData = resp;
         draw();
 
         _.filter($scope.vis.params.overlays.savedSearches, function(layerParams) {

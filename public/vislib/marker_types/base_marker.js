@@ -20,15 +20,15 @@ define(function (require) {
       this.layerControl = layerControl;
       this.popups = [];
       this.threshold = {
-        min: _.get(geoJson, 'properties.allmin', 0),
-        max: _.get(geoJson, 'properties.allmax', 1)
+        min: _.get(geoJson, 'properties.min', 0),
+        max: _.get(geoJson, 'properties.max', 1)
       };
       this.isVisible = _.get(params, 'prevState.isVisible', true);
       
       if (params.prevState) {
         //Scale threshold to have same shape as previous zoom level
         const prevRange = params.prevState.threshold.ceil - params.prevState.threshold.floor;
-        const newRange = _.get(geoJson, 'properties.allmax', 1) - _.get(geoJson, 'properties.allmin', 0);
+        const newRange = _.get(geoJson, 'properties.max', 1) - _.get(geoJson, 'properties.min', 0);
         if (params.prevState.threshold.min > params.prevState.threshold.floor) {
           const prevMinRatio = (params.prevState.threshold.min - params.prevState.threshold.floor) / prevRange;
           this.threshold.min = prevMinRatio * newRange;
@@ -57,7 +57,7 @@ define(function (require) {
     BaseMarker.prototype.addLegend = function () {
       // ensure we only ever create 1 legend
       if (this._legend) return;
-
+      let minVal = this._attr.scaleBands[0].low.toString()
       let self = this;
 
       // create the legend control, keep a reference
@@ -73,8 +73,8 @@ define(function (require) {
           min: self.threshold.min,
           max: self.threshold.max,
           options: {
-            floor: _.get(self.geoJson, 'properties.allmin', 0),
-            ceil: _.get(self.geoJson, 'properties.allmax', 1),
+            floor: _.get(self.geoJson, 'properties.min', 0),
+            ceil: _.get(self.geoJson, 'properties.max', 1),
             onEnd: function(sliderId, modelValue, highValue, pointerType) {
               self.threshold.min = modelValue;
               self.threshold.max = highValue;
@@ -88,20 +88,37 @@ define(function (require) {
         $div.append($sliderEl);
 
         _.each(self._legendColors, function (color, i) {
-          let labelText = self._legendQuantizer
-          .invertExtent(color)
-          .map(self._valueFormatter)
-          .join(' – ');
-
+          let labelText;
+          if ('Static' === self._attr.scaleType && self._legendLabels) {
+            if (self._legendLabels[i] && !(/^\s*$/.test(self._legendLabels[i]))) {
+              labelText = self._legendLabels[i];
+            }
+            else {
+              labelText = self._legendQuantizer
+                              .invertExtent(color)
+                              .map(self._valueFormatter)
+                              .join(' – ');
+              // solves the customisable first element in scale issue
+              if (i == 0) {
+                labelText = minVal + ' – ' + self._legendQuantizer.invertExtent(color).map(self._valueFormatter)[1].toString();
+              }
+            }
+          }
+          else {
+            labelText = self._legendQuantizer
+                            .invertExtent(color)
+                            .map(self._valueFormatter)
+                            .join(' – ');
+          }
+          
           let label = $('<div>').text(labelText);
 
           let icon = $('<i>').css({
             background: color,
             'border-color': self.darkerColor(color)
           });
-
           label.append(icon);
-          $div.append(label);
+          $div.append(label); 
         });
 
         return $div.get(0);
@@ -200,8 +217,8 @@ define(function (require) {
       const state = {
         isVisible: this._markerGroup && this.map.hasLayer(this._markerGroup),
         threshold: {
-          floor: _.get(this.geoJson, 'properties.allmin', 0),
-          ceil: _.get(this.geoJson, 'properties.allmax', 1),
+          floor: _.get(this.geoJson, 'properties.min', 0),
+          ceil: _.get(this.geoJson, 'properties.max', 1),
           min: this.threshold.min,
           max: this.threshold.max
         }
@@ -399,15 +416,18 @@ define(function (require) {
       if ('Static' === this._attr.scaleType) {
         const domain = [];
         const colors = [];
+        const labels = [];
         this._attr.scaleBands.forEach(function(band) {
           domain.push(band.high);
           colors.push(band.color);
+          labels.push(band.customLabel);
         });
         this._legendColors = colors;
         this._legendQuantizer = d3.scale.threshold().domain(domain).range(this._legendColors);
+        this._legendLabels = labels;
       } else {
-        const min = _.get(this.geoJson, 'properties.allmin', 0);
-        const max = _.get(this.geoJson, 'properties.allmax', 1);
+        const min = _.get(this.geoJson, 'properties.min', 0);
+        const max = _.get(this.geoJson, 'properties.max', 1);
         const range = max - min;
         const quantizeDomain = (min !== max) ? [min, max] : d3.scale.quantize().domain();
 

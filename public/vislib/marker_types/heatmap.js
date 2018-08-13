@@ -36,7 +36,7 @@ define(function (require) {
     HeatmapMarker.prototype.addLegend = _.noop;
 
     HeatmapMarker.prototype._createMarkerGroup = function (options) {
-      let max = _.get(this.geoJson, 'properties.allmax');
+      let max = _.get(this.geoJson, 'properties.max');
       let points = this._dataToHeatArray(max);
 
       this._markerGroup = L.heatLayer(points, options);
